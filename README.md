@@ -1,69 +1,106 @@
-# LlamaSOC — AI-Assisted Security Operations Lab
+# LlamaSOC — Local SOC Triage Lab
 
-LlamaSOC is an educational Security Operations Center (SOC) assistant concept that helps analysts summarize alerts, enrich events, and prioritize investigation steps. It is designed around human review, auditable outputs, and synthetic lab data.
+LlamaSOC is a defensive cybersecurity project that validates security events, runs explainable baseline detections, and produces a JSON triage report. This first implementation is deterministic and local; it does not call an external AI service or perform response actions.
 
-## Problem
+## What it currently does
 
-SOC teams receive high volumes of alerts with uneven context. Analysts need concise, explainable summaries without allowing an AI model to make unreviewed containment or remediation decisions.
+- Validates JSONL event records, required fields, supported event types, timezone-aware timestamps, selected field lengths, and IP address syntax.
+- Detects repeated failed authentication attempts followed by a successful login within 15 minutes.
+- Flags selected privileged-access changes.
+- Matches network destinations against an optional local/mock indicator list.
+- Flags large outbound transfers for analyst review.
+- Produces JSON with event counts, evidence, severity, confidence, recommendations, and a human-review requirement.
+- Includes synthetic events, unit tests, and a GitHub Actions workflow.
 
-## Proposed solution
+These rules are educational triage heuristics, not proof of compromise. The project does not yet implement LLM-based summarization, production SIEM integrations, or automated containment.
 
-- Normalize sample security events into a consistent schema.
-- Enrich events with safe, local context and mock threat-intelligence records.
-- Produce structured summaries: what happened, why it matters, evidence, confidence, and recommended next steps.
-- Preserve the original event and record the model/prompt version used for analysis.
-- Require analyst approval before any response action.
-- Include deterministic rules and tests so model output is not the only detection mechanism.
+## Requirements
 
-## Architecture (initial design)
+- Python 3.11 or later
+- No third-party runtime dependencies
 
-1. **Ingestion:** JSONL/CSV sample events from a local lab.
-2. **Normalization:** Validate required fields and timestamps.
-3. **Detection and enrichment:** Apply explicit rules and attach mock context.
-4. **AI analysis:** Generate a structured summary from minimized event data.
-5. **Analyst review:** Display evidence, confidence, uncertainty, and proposed actions.
-6. **Audit:** Record input event ID, analysis timestamp, model configuration, and reviewer decision without storing secrets.
+## Run locally
 
-## Suggested repository layout
+Clone the repository and enter its directory:
+
+```bash
+git clone https://github.com/iskanderothmani/LlamaSOC.git
+cd LlamaSOC
+```
+
+Run the test suite:
+
+```bash
+PYTHONPATH=src python -m unittest discover -s tests -v
+```
+
+Analyze the included synthetic dataset:
+
+```bash
+PYTHONPATH=src python -m llamasoc.cli data/sample-events.jsonl --indicator 198.51.100.23
+```
+
+Write the report to a file:
+
+```bash
+PYTHONPATH=src python -m llamasoc.cli data/sample-events.jsonl --indicator 198.51.100.23 --output report.json
+```
+
+The CLI exits with a nonzero status if event validation or JSONL parsing errors are found. The sample dataset uses documentation-reserved IP ranges and fictional identities.
+
+## Detection rules
+
+| Rule ID | Detection | Default severity |
+|---|---|---|
+| AUTH-001 | Repeated failed logins followed by success within 15 minutes | High |
+| IAM-001 | Selected privileged-access changes | High |
+| NET-001 | Destination matches a supplied local/mock indicator | High |
+| NET-002 | Outbound byte count reaches the triage threshold | Medium |
+
+Adjust the failed-login threshold with `--failed-login-threshold 3`. Supply local test indicators with one or more `--indicator` arguments. The indicator matching is exact-string matching; it does not query an external threat-intelligence service.
+
+## Repository layout
 
 ```text
 .
-├── README.md
+├── .github/workflows/tests.yml
+├── data/sample-events.jsonl
 ├── docs/
 │   ├── architecture.md
 │   └── threat-model.md
-├── data/
-│   └── sample-events.jsonl
-├── src/
-│   └── llamasoc/
-├── tests/
-├── .env.example
-├── .gitignore
+├── src/llamasoc/
+│   ├── __init__.py
+│   ├── cli.py
+│   └── core.py
+├── tests/test_core.py
+├── pyproject.toml
 └── requirements.txt
 ```
 
 ## Safety and privacy
 
-- Use synthetic events only; do not upload real employer or customer logs.
-- Never commit API keys, credentials, access tokens, or model-provider secrets.
-- Keep model output advisory; do not execute commands or isolate hosts based solely on an LLM response.
-- Minimize personal data and redact identifiers before sending event text to any external model.
-- Validate and constrain structured model output; treat event content as untrusted input to reduce prompt-injection risk.
-- Do not connect this prototype to production systems without a formal security review and explicit authorization.
+- Use synthetic or sanitized data; never commit company logs, customer data, secrets, access tokens, or private keys.
+- Keep experiments isolated and test only systems you own or are authorized to assess.
+- Alerts are advisory. Validate evidence and recommendations before taking action.
+- No containment, account lockout, host isolation, or other response action is implemented.
+- Treat event content as untrusted and review generated reports for sensitive information before sharing.
+- See [the architecture](docs/architecture.md) and [threat model](docs/threat-model.md).
 
-## Initial milestones
+## Roadmap
 
-- [ ] Define the event schema and JSONL sample dataset.
-- [ ] Implement schema validation and deterministic baseline rules.
-- [ ] Add an analysis interface with structured output and uncertainty fields.
-- [ ] Add unit tests for malformed events, prompt injection attempts, and missing context.
-- [ ] Add audit records and a clear human-approval workflow.
-- [ ] Document limitations and a reproducible local demo.
+- [x] Establish the Python package and CLI
+- [x] Add schema validation and deterministic baseline detections
+- [x] Add synthetic data and unit tests
+- [x] Add CI test workflow
+- [ ] Execute and review CI results on GitHub
+- [ ] Add structured analyst case records and audit trail
+- [ ] Add an optional, isolated LLM summarization adapter with strict output validation and human approval
+- [ ] Add a documented local demo and example report
 
 ## Status
 
-**Stage:** Project scaffold and design documentation. Implementation and test results should be reported only after they exist.
+**Prototype — initial implementation committed.** CI and test outcomes must be confirmed by running the workflow; no passing result is claimed until verified.
 
 ## Disclaimer
 
-For education and authorized defensive operations only. This repository does not claim production readiness.
+Educational defensive-security work only. This prototype is not production-ready and must not be connected to production systems without authorization, security review, and appropriate controls.
