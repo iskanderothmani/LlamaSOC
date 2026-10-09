@@ -1,0 +1,6 @@
+{"event_id":"evt-001","timestamp":"2026-10-08T09:00:00Z","event_type":"authentication","source":"auth-lab","username":"alex","src_ip":"192.0.2.44","outcome":"failed","details":"Synthetic failed login 1"}
+{"event_id":"evt-002","timestamp":"2026-10-08T09:01:00Z","event_type":"authentication","source":"auth-lab","username":"alex","src_ip":"192.0.2.44","outcome":"failed","details":"Synthetic failed login 2"}
+{"event_id":"evt-003","timestamp":"2026-10-08T09:02:00Z","event_type":"authentication","source":"auth-lab","username":"alex","src_ip":"192.0.2.44","outcome":"failed","details":"Synthetic failed login 3"}
+{"event_id":"evt-004","timestamp":"2026-10-08T09:03:00Z","event_type":"authentication","source":"auth-lab","username":"alex","src_ip":"192.0.2.44","outcome":"success","details":"Synthetic successful login"}
+{"event_id":"evt-005","timestamp":"2026-10-08T09:04:00Z","event_type":"privilege_change","source":"iam-lab","username":"svc-build","action":"grant_admin","details":"Synthetic privileged group change"}
+{"event_id":"evt-006","timestamp":"2026-10-08T09:05:00Z","event_type":"network_connection","source":"network-lab","username":"alex","destination":"198.51.100.23","bytes_out":125000000,"details":"Synthetic outbound transfer for test"}
